@@ -1,0 +1,54 @@
+
+;All syscalls default to c-lib <std::>
+section .text   
+;Basically <int main> func
+global _start ;read from here vvv
+ ;reg <rsp> is Stack Pointer, changing execution order
+_start:
+  ;Sub section <int main>, nested like c# functions
+  mov rdi, 1 ;<cout>
+  lea rsi, [rel inputAskForInt]
+  ;<rel[val]> allows safe interaction w/ non-const data
+  mov rdx, inputAskForInt_size ;bytes to write eq > iAFI_s == iAFI 
+  call write
+  
+  mov rax, 0 ;zero out return reg, filled aftr <write:>
+  mov rdi, 0 ;<cin>
+  mov rdx, 16;give 16Bytes unassigned
+  call read
+
+  xor rdi, rdi
+  call exit
+ write:   
+ ;Sub section to output pure txt
+  push rbp ;rsp - rbp, -> rsp == rsp
+  mov rbp, rsp ;set rbp<rbp == bytes to write> to same as rsp
+  mov rax, 1
+  syscall
+  pop rbp ;rsp == rbp, -> rsp + rbp. basically just ++ in this instance
+  ret ;stack pointer set to call (<func>)++, just ends func
+
+ read:
+ ;Sub section to take input
+ push rbp
+ syscall
+ pop rbp
+ ret
+
+ exit:
+  push rbp
+  mov rbp, rsp
+  mov rax, 60
+  syscall
+  pop rbp
+  ret
+
+section .data  
+;CONSTANTS ONLY
+inputAskForInt db "Declare first int, 1 Byte = 1 Unit", 10 ;\n flag
+inputAskForInt_size equ $ - inputAskForInt ;store size var into  _size var
+inputAskOper db "Declare Opperand: 1b=* 2b=/ 3b=+ 4b=-", 10 
+inputAskOper_size equ $ - inputAskOper
+section .bss
+genericBuffer: resb 32
+;reserves 32 bytes
